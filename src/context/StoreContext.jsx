@@ -13,7 +13,7 @@ const StoreContextProvider = (props) => {
     
     return(
         <StoreContext.Provider value={contextValue}>
-            {props.childern}
+            {props.children}
         </StoreContext.Provider>
     )
 
