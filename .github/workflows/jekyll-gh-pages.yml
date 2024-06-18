@@ -59,3 +59,28 @@ jobs:
           github_token: ${{ secrets.GH_TOKEN }}
           publish_dir: ./dist  # Replace with your build output directory
           publish_branch: gh-pages
+
+  deploy_to_appcenter:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Deploy to App Center
+        uses: microsoft/appcenter-action@v2
+        with:
+          app_secret: ${{ secrets.APPCENTER_SECRET }}
+          command: distribute
+          platform: react-native
+          artifacts: './dist/*'  # Deploy all files in dist directory
