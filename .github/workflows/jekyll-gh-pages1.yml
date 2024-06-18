@@ -31,15 +31,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20.0.0
+      - name: Install dependencies
+        run: npm install
       - run: npm ci
       - run: npm test
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4 
         with:
          node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
-  
-      - name: Install dependencies
-        run: npm install
 
       - name: Build the project
         run: npm run build 
