@@ -65,6 +65,44 @@ jobs:
     - name: Install jq
       run: sudo apt-get install jq
 
+    - name: Verify zip file creation
+      run: |
+          echo "Contents of current directory:"
+          ls -l
+          echo "Contents of zip file:"
+          unzip -l web-app.zip
+          
+
+    - name: Upload zip file to a hosting service
+        # Replace this with your preferred hosting method
+      run: |
+          # Example: Upload to GitHub releases (you might need a different method)
+          release_response=$(curl -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{
+              "tag_name": "v1.0.0",
+              "target_commitish": "main",
+              "name": "v1.0.0",
+              "body": "Release of web app",
+              "draft": false,
+              "prerelease": false
+            }' \
+            https://api.github.com/repos/${{ github.repository }}/releases)
+
+          echo "Release response: $release_response"
+          upload_url=$(echo $release_response | jq -r '.upload_url' | sed -e "s/{?name,label}//")
+          echo "Upload URL: $upload_url"
+
+          curl -X POST \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            -H "Content-Type: application/zip" \
+            --data-binary @web-app.zip \
+            "$upload_url?name=web-app.zip"
+
+          external_download_url=$(echo $release_response | jq -r '.html_url')
+          echo "External Download URL: $external_download_url"
+
   Deploy_To_AppCenter:
     needs: [build]
     runs-on: ubuntu-latest
@@ -77,45 +115,25 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Upload and Deploy to App Center
+      - name: Create release in App Center
         run: |
           echo "Creating release in App Center..."
-          
-          # Initiate a release upload
-          upload_response=$(curl -X POST \
-            -H "Content-Type: application/json" \
-            -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases)
-            
 
-          echo "Upload response: $upload_response"
-
-          upload_id=$(echo $upload_response | jq -r '.upload_id')
-          upload_url=$(echo $upload_response | jq -r '.upload_url')
-
-          echo "Upload ID: $upload_id"
-          echo "Upload URL: $upload_url"
-
-          if [ -z "$upload_id" ] || [ -z "$upload_url" ]; then
-            echo "Error: upload_id or upload_url is empty"
+          if [ -z "$external_download_url" ]; then
+            echo "Error: external_download_url is empty"
             exit 1
           fi
 
-          # Upload the zip file
-          upload_status=$(curl -T web-app.zip -H "Content-Type: application/zip" "$upload_url")
-
-          echo "Upload status: $upload_status"
-
-          # Commit the release upload
-          commit_response=$(curl -X PATCH \
+          release_response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d '{"status": "committed"}' \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/release_uploads/$upload_id)
+            -d @- https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases <<EOF { "external_download_url": "$external_download_url","build_version": "1.0.0","build_number": "1" }
+          EOF
+          )
 
-          echo "Commit response: $commit_response"
+          echo "Release response: $release_response"
 
-          release_id=$(echo $commit_response | jq -r '.release_id')
+          release_id=$(echo $release_response | jq -r '.id')
 
           echo "Release ID: $release_id"
 
@@ -123,23 +141,5 @@ jobs:
             echo "Error: release_id is empty"
             exit 1
           fi
-
-          # Update release with release notes and distribute to deployment
-          update_response=$(curl -X PATCH \
-            -H "Content-Type: application/json" \
-            -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d "{\"release_notes\": \"New version of the web app\"}" \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases/$release_id)
-
-          echo "Update response: $update_response"
-
-          # Distribute the release
-          distribute_response=$(curl -X POST \
-            -H "Content-Type: application/json" \
-            -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d "{\"id\": \"$release_id\"}" \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/deployments/$DEPLOYMENT_NAME/releases)
-
-          echo "Distribute response: $distribute_response"
 
           echo "Release created successfully in App Center with ID: $release_id"
