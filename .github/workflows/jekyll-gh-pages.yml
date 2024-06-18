@@ -75,8 +75,18 @@ jobs:
             -d '{ "release_notes": "New version of the web app" }' \
             https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/release_uploads)
 
+          echo "Release upload response: $release_upload_response"
+
           upload_url=$(echo $release_upload_response | jq -r '.upload_url')
           upload_id=$(echo $release_upload_response | jq -r '.upload_id')
+
+          echo "Upload URL: $upload_url"
+          echo "Upload ID: $upload_id"
+
+          if [ -z "$upload_url" ] || [ -z "$upload_id" ]; then
+            echo "Error: upload_url or upload_id is empty"
+            exit 1
+          fi
 
           curl -F "ipa=@web-app.zip" "$upload_url"
 
