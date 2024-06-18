@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import App from './App.jsx';
-import './index.css';
+import App from '/React2/src/App.jsx';
+import '/React2/src/index.css';
 import { BrowserRouter } from 'react-router-dom';
-import StoreContextProvider from './context/StoreContext.jsx';
+import StoreContextProvider from '/React2/src/context/StoreContext.jsx';
 
 ReactDOM.render(
   <React.StrictMode>
