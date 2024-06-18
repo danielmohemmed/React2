@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,80 +15,124 @@ jobs:
         node-version: [20.x]
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-      - name: Set up Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: ${{ matrix.node-version }}
+    - name: Set up Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies
-        run: npm install
+    - name: Install dependencies
+      run: npm install
     
-      - name: Run tests and generate coverage report
-        run: npm test -- --coverage
+    - name: install --save-dev jest
+      run: npm install --save-dev jest @testing-library/react @testing-library/jest-dom
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
+    - name: Run the tests and generate coverage report
+      run: npm test -- --coverage
 
-      - name: Build
-        run: npm run build
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
 
-      - name: Deploy to GitHub Pages
+    - name: Build
+      run: npm run build
+
+    - name: Deploy
+      run: |
+        git config --global user.name $user_name
+        git config --global user.email $user_email
+        git remote set-url origin https://${github_token}@github.com/${repository}
+        npm run deploy
+        
+      env:
+        user_name: 'github-actions[bot]'
+        user_email: 'github-actions[bot]@users.noreply.github.com'
+        github_token: ${{ secrets.GH_TOKEN }}
+        repository: ${{ github.repository }}
+
         uses: peaceiris/actions-gh-pages@v4
-        with:
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
           github_token: ${{ secrets.GH_TOKEN }}
           publish_dir: ./dist  # Replace with your build output directory
           publish_branch: gh-pages
 
-      - name: Zip the build directory
-        run: zip -r web-app.zip dist
+    - name: Zip the build directory
+      run: zip -r web-app.zip dist
 
-      - name: Verify zip file creation
-        run: |
+    - name: Install jq
+      run: sudo apt-get install jq
+
+    - name: Verify zip file creation
+      run: |
           echo "Contents of current directory:"
           ls -l
           echo "Contents of zip file:"
           unzip -l web-app.zip
+          
 
-     
-      - name: Get release download URL
-      
-        id: release_download
-        run: |
-          download_url=$(curl -sS \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.release_id }}/assets \
-            | jq -r '.assets[0].browser_download_url')
+    - name: Create GitHub release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+       tag_name: v1.0.0
+       release_name: Release v1.0.0
+       body: Release of web app
+       draft: false
+       prerelease: false
 
-          echo "Download URL for release: $download_url"
-          echo "::set-output name=download_url::$download_url"
+          # Upload web-app.zip as an asset to the release
+       asset_path: ./web-app.zip
+       asset_name: web-app.zip
+       asset_content_type: application/zip
+
+           # Replace with your repository name
+       repository: ${{ github.repository }}
+
+          # Optional - you can adjust this based on your need
+       target_commitish: main
+
+  Deploy_To_AppCenter:
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
+      APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
+      APP_NAME: React2  # Replace with your App Center application name
+      DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
+      external_download_url: https://mycorp.example.com/calculator/builds/42
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
 
       - name: Create release in App Center
-    
         run: |
           echo "Creating release in App Center..."
 
-          if [ -z "${{ steps.release_download.outputs.download_url }}" ]; then
-            echo "Error: download_url is empty"
+          if [ -z "$external_download_url" ]; then
+            echo "Error: external_download_url is empty"
             exit 1
           fi
 
           release_response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d "{
-              \"external_download_url\": \"${{ steps.release_download.outputs.download_url }}\",
-              \"build_version\": \"1.0.0\"
-            }" \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases)
+            -d @- https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases <<EOF { "external_download_url": "$external_download_url","build_version": "1.0.0","build_number": "1" }
+          EOF
+          )
+
+          echo "Release response: $release_response"
 
           release_id=$(echo $release_response | jq -r '.id')
 
+          echo "Release ID: $release_id"
+
           if [ -z "$release_id" ]; then
-            echo "Error: Failed to create release in App Center"
+            echo "Error: release_id is empty"
             exit 1
           fi
 
