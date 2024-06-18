@@ -6,7 +6,6 @@
     "dev": "vite",
     "build": "vite build",
     "serve": "vite preview",
-    "deploy": "gh-pages -d dist",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
   },
