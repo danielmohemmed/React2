@@ -123,20 +123,11 @@ jobs:
           release_response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d @- https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases <<EOF { "external_download_url": "$download_url","build_version": "1.0.0","build_number": "1" }
-
-          EOF 
-          )
+            -d "{
+              \"external_download_url\": \"$download_url\",
+              \"build_version\": \"1.0.0\",
+              \"build_number\": \"1\"
+            }" \
+            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases)
 
           echo "Release response: $release_response"
-
-          release_id=$(echo $release_response | jq -r '.id')
-
-          echo "Release ID: $release_id"
-
-          if [ -z "$release_id" ]; then
-            echo "Error: release_id is empty"
-            exit 1
-          fi
-
-          echo "Release created successfully in App Center with ID: $release_id"
