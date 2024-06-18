@@ -31,10 +31,15 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 20.0.0
+
       - name: Install dependencies
         run: npm install
       - run: npm ci
-      - run: npm test
+      - name: install --save-dev jest
+        run: npm install --save-dev jest @testing-library/react @testing-library/jest-dom
+
+      - name: Run the tests and generate coverage report
+        run: npm test -- --coverage
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4 
         with:
