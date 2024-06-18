@@ -62,8 +62,6 @@ jobs:
     - name: Zip the build directory
       run: zip -r web-app.zip dist
 
-  deploy_to_appcenter:
-    runs-on: ubuntu-latest
     needs: [build]
     env:
           APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
