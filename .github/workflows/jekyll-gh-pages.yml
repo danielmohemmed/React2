@@ -71,30 +71,6 @@ jobs:
           ls -l
           echo "Contents of zip file:"
           unzip -l web-app.zip
-          
-
-    - name: Create GitHub release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-       tag_name: v1.0.0
-       release_name: Release v1.0.0
-       body: Release of web app
-       draft: false
-       prerelease: false
-
-          # Upload web-app.zip as an asset to the release
-       asset_path: ./web-app.zip
-       asset_name: web-app.zip
-       asset_content_type: application/zip
-
-           # Replace with your repository name
-       repository: ${{ github.repository }}
-
-          # Optional - you can adjust this based on your need
-       target_commitish: main
 
   Deploy_To_AppCenter:
     needs: [build]
@@ -104,25 +80,52 @@ jobs:
       APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
       APP_NAME: React2  # Replace with your App Center application name
       DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
-      external_download_url: https://mycorp.example.com/calculator/builds/42
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Create GitHub release
+        id: create_release
+        run: |
+          echo "Creating GitHub release..."
+          release_id=$(curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases \
+            -d '{"tag_name": "v1.0.0", "name": "Release v1.0.0", "body": "Release of web app"}' | jq -r '.id')
+
+          echo "GitHub release created with ID: $release_id"
+          echo "::set-output name=release_id::$release_id"
+
+      - name: Get release download URL
+        id: release_download
+        run: |
+          download_url=$(curl -sS \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.release_id }}/assets \
+            | jq -r '.[0].browser_download_url')
+
+          echo "Download URL for release: $download_url"
+          echo "::set-output name=download_url::$download_url"
 
       - name: Create release in App Center
         run: |
           echo "Creating release in App Center..."
 
-          if [ -z "$external_download_url" ]; then
-            echo "Error: external_download_url is empty"
+          download_url="${{ steps.release_download.outputs.download_url }}"
+
+          if [ -z "$download_url" ]; then
+            echo "Error: download_url is empty"
             exit 1
           fi
 
           release_response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d @- https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases <<EOF { "external_download_url": "$external_download_url","build_version": "1.0.0","build_number": "1" }
-          EOF
+            -d @- https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases <<EOF { "external_download_url": "$download_url","build_version": "1.0.0","build_number": "1" }
+
+          EOF 
           )
 
           echo "Release response: $release_response"
