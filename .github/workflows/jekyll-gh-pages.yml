@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
-      APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
+      APP_OWNER_NAME: danial.mohemmed  # Replace with your App Center owner name
       APP_NAME: React2  # Replace with your App Center application name
       DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
     steps:
