@@ -62,26 +62,36 @@ jobs:
     - name: Zip the build directory
       run: zip -r web-app.zip dist
 
-    - name: Deploy to App Center
-       env:
-          APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
-          APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
-          APP_NAME: React2  # Replace with your App Center application name
-          DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
+    - name: Install jq
+      run: sudo apt-get install jq
+
+  Deploy_To_AppCenter:
+    needs: [build]
+    runs-on: ubuntu-latest
+    env:
+      APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
+      APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
+      APP_NAME: React2  # Replace with your App Center application name
+      DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Deploy to App Center
         run: |
           echo "Creating release in App Center..."
           release_response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
             -d @- https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/deployments/$DEPLOYMENT_NAME/releases <<EOF
-{
-  "release_notes": "New version of the web app",
-  "build": {
-    "location": "web-app.zip"
-  }
-}
-EOF
-          )
+            { 
+            "release_notes": "New version of the web app", 
+            "build":{
+             "location": "web-app.zip" 
+             }
+          }
+          EOF
+             )
 
           echo "Release response: $release_response"
 
