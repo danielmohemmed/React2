@@ -73,35 +73,28 @@ jobs:
           unzip -l web-app.zip
           
 
-    - name: Upload zip file to a hosting service
-        # Replace this with your preferred hosting method
-      run: |
-          # Example: Upload to GitHub releases (you might need a different method)
-          release_response=$(curl -X POST \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-              "tag_name": "v1.0.0",
-              "target_commitish": "main",
-              "name": "v1.0.0",
-              "body": "Release of web app",
-              "draft": false,
-              "prerelease": false
-            }' \
-            https://api.github.com/repos/${{ github.repository }}/releases)
+    - name: Create GitHub release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+       tag_name: v1.0.0
+       release_name: Release v1.0.0
+       body: Release of web app
+       draft: false
+       prerelease: false
 
-          echo "Release response: $release_response"
-          upload_url=$(echo $release_response | jq -r '.upload_url' | sed -e "s/{?name,label}//")
-          echo "Upload URL: $upload_url"
+          # Upload web-app.zip as an asset to the release
+       asset_path: ./web-app.zip
+       asset_name: web-app.zip
+       asset_content_type: application/zip
 
-          curl -X POST \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
-            -H "Content-Type: application/zip" \
-            --data-binary @web-app.zip \
-            "$upload_url?name=web-app.zip"
+           # Replace with your repository name
+       repository: ${{ github.repository }}
 
-          external_download_url=$(echo $release_response | jq -r '.html_url')
-          echo "External Download URL: $external_download_url"
+          # Optional - you can adjust this based on your need
+       target_commitish: main
 
   Deploy_To_AppCenter:
     needs: [build]
@@ -111,6 +104,7 @@ jobs:
       APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
       APP_NAME: React2  # Replace with your App Center application name
       DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
+      external_download_url: https://mycorp.example.com/calculator/builds/42
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
