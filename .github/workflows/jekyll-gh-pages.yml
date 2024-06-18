@@ -70,7 +70,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
-      APP_OWNER_NAME: danial.mohemmed  # Replace with your App Center owner name
+      APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
       APP_NAME: React2  # Replace with your App Center application name
       DEPLOYMENT_NAME: Production  # Replace with your deployment name in App Center
     steps:
@@ -85,7 +85,8 @@ jobs:
           upload_response=$(curl -X POST \
             -H "Content-Type: application/json" \
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/release_uploads)
+            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases)
+            
 
           echo "Upload response: $upload_response"
 
