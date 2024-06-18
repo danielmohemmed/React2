@@ -38,8 +38,6 @@ jobs:
       - name: Build the project
         run: npm run build
         
-      - name: Upload artifact
-        uses: peaceiris/upload-pages-artifact@v3
 
   # Deployment job
   deploy:
