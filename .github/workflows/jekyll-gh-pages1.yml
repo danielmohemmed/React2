@@ -25,16 +25,19 @@ jobs:
   # Build job
   build:
     runs-on: ubuntu-latest
+    name: Node sample
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-      - name: Build with Jekyll
-        uses: actions/jekyll-build-pages@v1
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4 
         with:
-          source: ./
-          destination: ./_site
+         node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
+  
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the project
+        run: npm run build
+        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
 
@@ -49,3 +52,10 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Deploy to GitHub Pages - second
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GH_TOKEN }}
+          publish_dir: ./dist
+          url: ${{ steps.deployment.outputs.page_url }}
+
