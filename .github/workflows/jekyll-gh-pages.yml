@@ -54,7 +54,7 @@ jobs:
 
      
       - name: Get release download URL
-        if: steps.create_release.outputs.release_id != null
+      
         id: release_download
         run: |
           download_url=$(curl -sS \
@@ -67,7 +67,7 @@ jobs:
           echo "::set-output name=download_url::$download_url"
 
       - name: Create release in App Center
-        if: steps.release_download.outputs.download_url != null
+    
         run: |
           echo "Creating release in App Center..."
 
