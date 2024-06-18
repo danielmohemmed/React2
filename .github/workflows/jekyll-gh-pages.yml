@@ -45,8 +45,17 @@ jobs:
         git config --global user.email $user_email
         git remote set-url origin https://${github_token}@github.com/${repository}
         npm run deploy
+        
       env:
         user_name: 'github-actions[bot]'
         user_email: 'github-actions[bot]@users.noreply.github.com'
         github_token: ${{ secrets.GH_TOKEN }}
         repository: ${{ github.repository }}
+
+        uses: peaceiris/actions-gh-pages@v4
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+          github_token: ${{ secrets.ACCESS_TOKEN }}
+          publish_dir: ./dist  # Replace with your build output directory
+          publish_branch: gh-pages
