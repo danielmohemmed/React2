@@ -62,8 +62,8 @@ jobs:
     - name: Zip the build directory
       run: zip -r web-app.zip dist
 
-    - name: Install jq
-      run: sudo apt-get install jq
+   # - name: Install jq
+     # run: sudo apt-get install jq
 
     - name: Verify zip file creation
       run: |
