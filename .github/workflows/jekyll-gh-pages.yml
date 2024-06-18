@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.x]
+        node-version: [14.x]
 
     steps:
       - name: Checkout repository
@@ -54,6 +54,7 @@ jobs:
 
       - name: Create GitHub release
         id: create_release
+        continue-on-error: true  # Continue on error to handle release already exists scenario
         run: |
           echo "Creating GitHub release..."
           release_response=$(curl -X POST \
@@ -63,6 +64,11 @@ jobs:
             -d '{"tag_name": "v1.0.0", "name": "Release v1.0.0", "body": "Release of web app"}')
 
           echo "GitHub release creation response: $release_response"
+
+          if [[ $(echo "$release_response" | jq -r '.errors[0].code') == "already_exists" ]]; then
+            echo "Release with tag 'v1.0.0' already exists. Skipping creation."
+            exit 0
+          fi
 
           release_id=$(echo $release_response | jq -r '.id')
 
@@ -75,6 +81,7 @@ jobs:
           echo "::set-output name=release_id::$release_id"
 
       - name: Get release download URL
+        if: steps.create_release.outputs.release_id != null
         id: release_download
         run: |
           download_url=$(curl -sS \
@@ -87,6 +94,7 @@ jobs:
           echo "::set-output name=download_url::$download_url"
 
       - name: Create release in App Center
+        if: steps.release_download.outputs.download_url != null
         run: |
           echo "Creating release in App Center..."
 
