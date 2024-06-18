@@ -44,7 +44,7 @@ jobs:
       - uses: actions/setup-node@v4 
         with:
          node-version: '20.0.0-v8-canary' # it will install the latest v8 canary release for node 20.0.0
-
+      - run: npm install vite --save-dev
       - name: Build the project
         run: npm run build 
         
