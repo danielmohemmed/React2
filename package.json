@@ -7,7 +7,8 @@
     "build": "vite build",
     "serve": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "gh-pages -d build",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "react": "^18.0.0",
