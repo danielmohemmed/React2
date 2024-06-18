@@ -62,12 +62,12 @@ jobs:
     - name: Zip the build directory
       run: zip -r web-app.zip dist
 
-    needs: [build]
-    env:
+    - name: Deploy to Appcenter
+      env:
           APP_CENTER_API_TOKEN: ${{ secrets.APP_CENTER_API_TOKEN }}
           APP_OWNER_NAME: daniel.mohammed  # Replace with your App Center owner name
           APP_NAME: React2  # Replace with your App Center application name
-         run: |
+      run: |
           echo "Creating release in App Center..."
           release_upload_response=$(curl -X POST \
             -H "Content-Type: application/json" \
