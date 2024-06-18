@@ -36,7 +36,15 @@ jobs:
         run: npm install
 
       - name: Build the project
-        run: npm run build
+        run: npm run build 
+        
+      - name: upload
+        uses: actions/upload-pages-artifact@v3
+        with:
+          source: ./
+          destination: ./_site
+          
+    
         
 
   # Deployment job
