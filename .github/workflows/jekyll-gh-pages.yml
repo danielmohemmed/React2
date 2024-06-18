@@ -102,9 +102,9 @@ jobs:
         run: |
           download_url=$(curl -sS \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: token ${{ secrets.GH_TOKEN }}" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             https://api.github.com/repos/${{ github.repository }}/releases/${{ steps.create_release.outputs.release_id }}/assets \
-            | jq -r '.[0].browser_download_url')
+            | jq -r '.assets[0].browser_download_url')
 
           echo "Download URL for release: $download_url"
           echo "::set-output name=download_url::$download_url"
@@ -125,32 +125,7 @@ jobs:
             -H "X-API-Token: $APP_CENTER_API_TOKEN" \
             -d "{
               \"external_download_url\": \"$download_url\",
-              \"build_version\": \"1.0.0\",
-              \"build_number\": \"1\"
-            }" \
-            https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases)
-
-          echo "Release response: $release_response"
-
-
-      - name: Create release in App Center2
-        run: |
-          echo "Creating release in App Center..."
-
-          download_url="${{ steps.release_download.outputs.download_url }}"
-
-          if [ -z "$download_url" ]; then
-            echo "Error: download_url is empty"
-            exit 1
-          fi
-
-          release_response=$(curl -X POST \
-            -H "Content-Type: application/json" \
-            -H "X-API-Token: $APP_CENTER_API_TOKEN" \
-            -d "{
-              \"external_download_url\": \"$download_url\",
-              \"build_version\": \"1.0.0\",
-              \"build_number\": \"1\"
+              \"build_version\": \"1.0.0\"
             }" \
             https://api.appcenter.ms/v0.1/apps/$APP_OWNER_NAME/$APP_NAME/releases)
 
