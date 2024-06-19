@@ -34,16 +34,12 @@ jobs:
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
-  NPM_Build:
-    needs: [build]
-    runs-on: ubuntu-latest
-    name: npm Build
-    steps:
+ 
     - name: Build
       run: npm run build
   
   Deply_To_GitHub_Pages:
-    needs: [NPM_Build]
+    needs: [build]
     runs-on: ubuntu-latest
     name: Deply to GitHub Pages
     steps:
