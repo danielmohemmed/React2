@@ -37,12 +37,7 @@ jobs:
  
     - name: Build
       run: npm run build
-  
-  Deply_To_GitHub_Pages:
-    needs: [build]
-    runs-on: ubuntu-latest
-    name: Deply to GitHub Pages
-    steps:
+      
     - name: Deploy
       run: |
         git config --global user.name $user_name
@@ -64,7 +59,7 @@ jobs:
           publish_dir: ./dist  # Replace with your build output directory
           publish_branch: gh-pagesz
   Zip_Build:
-    needs: [Deply_To_GitHub_Pages]
+    needs: [build]
     runs-on: ubuntu-latest
     name: Zip_Build Directory
     steps:
