@@ -34,10 +34,19 @@ jobs:
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
-
+  NPM_Build:
+    needs: [build]
+    runs-on: ubuntu-latest
+    name: npm Build
+    steps:
     - name: Build
       run: npm run build
-
+  
+  Deply_To_GitHub_Pages:
+    needs: [NPM_Build]
+    runs-on: ubuntu-latest
+    name: Deply to GitHub Pages
+    steps:
     - name: Deploy
       run: |
         git config --global user.name $user_name
@@ -57,8 +66,12 @@ jobs:
       with:
           github_token: ${{ secrets.GH_TOKEN }}
           publish_dir: ./dist  # Replace with your build output directory
-          publish_branch: gh-pages
-
+          publish_branch: gh-pagesz
+  Zip_Build:
+    needs: [Deply_To_GitHub_Pages]
+    runs-on: ubuntu-latest
+    name: Zip_Build Directory
+    steps:
     - name: Zip the build directory
       run: zip -r web-app.zip dist
 
@@ -72,22 +85,4 @@ jobs:
           echo "Contents of zip file:"
           unzip -l web-app.zip
 
-  Deploy_To_AppCenter:
-    needs: [build]
-    runs-on: ubuntu-latest
-    name: Android Build
-    steps:
-    - uses: actions/checkout@v2
-    - name: set up JDK 1.8
-      uses: actions/setup-java@v1
-      with:
-        java-version: 1.8
-    - name: Build with Gradle
-      run: ./gradlew assembleDevRelease -PkeystorePassword=${{secrets.KEYSTORE_PASSWORD}} -PkeyAliasPassword=${{secrets.KEY_ALIAS_PASSWORD}}
-    - name: upload artefact to App Center
-      uses: wzieba/AppCenter-Github-Action@v1.0.0
-      with:
-        appName: ${{secrets.APP_CENTER_API_TOKEN}}/${{secrets.APP_CENTER_API_TOKEN}}
-        token: ${{secrets.APP_CENTER_API_TOKEN}}
-        group: Internal
-        file: app/build/outputs/apk/dev/release/app-dev-release.apk
+  
