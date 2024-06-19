@@ -58,11 +58,7 @@ jobs:
           github_token: ${{ secrets.GH_TOKEN }}
           publish_dir: ./dist  # Replace with your build output directory
           publish_branch: gh-pagesz
-  Zip_Build:
-    needs: [build]
-    runs-on: ubuntu-latest
-    name: Zip_Build Directory
-    steps:
+  
     - name: Zip the build directory
       run: zip -r web-app.zip dist
 
